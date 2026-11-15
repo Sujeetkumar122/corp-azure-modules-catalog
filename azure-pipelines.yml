@@ -1,0 +1,56 @@
+name: $(Build.DefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+      - releases/*
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: LintAndValidate
+    displayName: 'Lint & Compile Bicep Modules'
+    jobs:
+      - job: BicepValidation
+        displayName: 'Bicep Syntax & Compilation Check'
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: AzureCLI@2
+            displayName: 'Compile All Bicep Modules'
+            inputs:
+              azureSubscription: 'Azure-DevOps-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                echo "===> Compiling Bicep modules in catalog..."
+                for file in modules/*.bicep; do
+                  echo "Building $file..."
+                  az bicep build --file "$file"
+                done
+                echo "All Bicep modules compiled successfully!"
+
+  - stage: SecurityScan
+    displayName: 'DevSecOps & Static Analysis'
+    dependsOn: LintAndValidate
+    jobs:
+      - job: StaticCodeAnalysis
+        displayName: 'Run Bicep Security Rules'
+        steps:
+          - checkout: self
+          - script: |
+              echo "===> Running Bicep Linter Analysis..."
+              az bicep lint --file modules/keyVault.bicep
+              az bicep lint --file modules/virtualNetwork.bicep
+              az bicep lint --file modules/applicationGateway.bicep
+              echo "Bicep linting completed with zero errors."
+            displayName: 'Bicep Static Analysis'

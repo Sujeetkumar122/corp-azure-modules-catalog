@@ -1,18 +1,9 @@
-# Local .terraform directories
-**/.terraform/*
+# Compiled ARM templates
+modules/*.json
+*.arm.json
 
-# .tfstate files
-*.tfstate
-*.tfstate.*
-
-# Crash logs
-crash.log
-crash.*.log
-
-# Sensitive variables
-*.tfvars
-*.tfvars.json
-
-.terraformrc
-terraform.rc
-.tflint.d/
+# Local artifacts & OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
